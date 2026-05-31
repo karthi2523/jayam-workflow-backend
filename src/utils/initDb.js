@@ -1,20 +1,41 @@
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 
+const fs = require('fs');
+const path = require('path');
+
 async function initDb() {
   console.log('Initializing MySQL database...');
   
   try {
+    const sslConfig = process.env.DB_SSL === 'true' ? { 
+      ca: fs.readFileSync(path.join(__dirname, '../../isrgrootx1.pem')),
+      rejectUnauthorized: true 
+    } : undefined;
 
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || ''
-    });
+    let connectionConfig;
+    if (process.env.DATABASE_URL) {
+      connectionConfig = {
+        uri: process.env.DATABASE_URL,
+        ssl: sslConfig
+      };
+    } else {
+      connectionConfig = {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 3306,
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '',
+        ssl: sslConfig
+      };
+    }
 
-    const dbName = process.env.DB_NAME || 'workflow_db';
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
-    await connection.query(`USE \`${dbName}\``);
+    const connection = await mysql.createConnection(connectionConfig);
+
+    if (!process.env.DATABASE_URL) {
+      const dbName = process.env.DB_NAME || 'workflow_db';
+      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+      await connection.query(`USE \`${dbName}\``);
+    }
 
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
