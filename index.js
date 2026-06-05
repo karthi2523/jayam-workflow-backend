@@ -11,6 +11,8 @@ app.use(express.json());
 
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/requests', require('./src/routes/requests'));
+app.use('/api/admin', require('./src/routes/admin'));
+app.use('/api/settings', require('./src/routes/settings'));
 
 initDb().then(() => {
   app.listen(PORT, () => {

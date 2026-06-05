@@ -25,6 +25,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
 
+    if (user.is_active === 0) {
+      return res.status(403).json({ message: 'Your account has been disabled by the administrator. Please contact support.' });
+    }
+
     const tokenPayload = {
       id: user.id,
       name: user.name,

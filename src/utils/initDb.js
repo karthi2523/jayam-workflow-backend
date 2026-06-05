@@ -44,8 +44,35 @@ async function initDb() {
         email VARCHAR(150) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         role ENUM('User', 'Manager', 'Admin') NOT NULL,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Safe migration: add is_active if it doesn't exist yet
+    try {
+      await connection.query(`
+        ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1
+      `);
+    } catch (e) {
+      if (!e.message.includes('Duplicate column')) {
+        // ignore if column already exists
+      }
+    }
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS admin_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        \`key\` VARCHAR(100) UNIQUE NOT NULL,
+        value VARCHAR(255) NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Seed default admin settings
+    await connection.query(`
+      INSERT IGNORE INTO admin_settings (\`key\`, value)
+      VALUES ('response_time_limit', '10'), ('response_time_unit', 'seconds')
     `);
 
     await connection.query(`

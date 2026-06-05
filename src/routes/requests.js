@@ -50,7 +50,8 @@ router.get('/', requireRole('Manager', 'Admin'), async (req, res) => {
   
   try {
     let query = `
-      SELECT r.*, u.name as user_name 
+      SELECT r.*, u.name as user_name,
+             GREATEST(0, UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) - UNIX_TIMESTAMP(r.created_at)) as age_seconds
       FROM requests r 
       JOIN users u ON r.user_id = u.id 
       WHERE 1=1
